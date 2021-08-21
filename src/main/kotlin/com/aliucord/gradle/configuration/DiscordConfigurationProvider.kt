@@ -43,8 +43,7 @@ class DiscordConfigurationProvider : IConfigurationProvider {
             val data = JsonSlurper().parse(URL("https://raw.githubusercontent.com/Aliucord/Aliucord/builds/data.json")) as Map<*, *>
             val v = parseInt(data["versionCode"] as String)
             project.logger.lifecycle("Discord version: $v")
-            aliucordSnapshot = v
-            v
+            v.also { aliucordSnapshot = v }
         } else parseInt(dependency.version)
 
         val extension = project.extensions.getAliucord()
