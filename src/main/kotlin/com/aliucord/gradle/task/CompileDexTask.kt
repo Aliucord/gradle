@@ -34,7 +34,8 @@ abstract class CompileDexTask : Exec() {
             android.sdkDirectory.resolve("build-tools").resolve(android.buildToolsVersion).resolve("d8").absolutePath
 
         args("--output")
-        args(outputFile.get().asFile.parent)
+        val outputFile = outputFile.get().asFile.parent
+        args(outputFile)
 
         args(
             compileTask.destinationDirectory.asFile.get().walkTopDown().filter { it.extension == "class" }
@@ -42,5 +43,7 @@ abstract class CompileDexTask : Exec() {
         )
 
         super.exec()
+
+        logger.lifecycle("Compiled dex to $outputFile")
     }
 }

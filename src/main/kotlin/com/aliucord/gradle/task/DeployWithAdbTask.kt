@@ -62,5 +62,7 @@ abstract class DeployWithAdbTask : DefaultTask() {
             device.executeShell("am", "force-stop", "com.aliucord")
             device.executeShell("monkey", "-p", "com.aliucord", "-c", "android.intent.category.LAUNCHER", "1")
         }
+
+        logger.lifecycle("Deployed $file to ${device.serial}")
     }
 }

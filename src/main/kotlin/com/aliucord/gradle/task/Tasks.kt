@@ -71,10 +71,18 @@ fun registerTasks(project: Project) {
             if (extension.projectType.get() == ProjectType.INJECTOR) {
                 it.into(project.buildDir)
                 it.rename { return@rename "Injector.dex" }
+
+                it.doLast { task ->
+                    task.logger.lifecycle("Copied Injector.dex to ${project.buildDir}")
+                }
             } else {
                 val zip = it as Zip
                 zip.archiveBaseName.set(project.name)
                 zip.destinationDirectory.set(project.buildDir)
+
+                it.doLast { task ->
+                    task.logger.lifecycle("Made Aliucord package at ${task.outputs.files.singleFile}")
+                }
             }
         }
 

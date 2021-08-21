@@ -39,11 +39,15 @@ class DiscordConfigurationProvider : IConfigurationProvider {
         discord.cache.mkdirs()
 
         if (!discord.apkFile.exists()) {
+            project.logger.lifecycle("Downloading discord apk")
+
             val url = URL("https://aliucord.tk/download/discord?v=${discord.version}")
             discord.apkFile.copyInputStreamToFile(url.openStream())
         }
 
         if (!discord.jarFile.exists()) {
+            project.logger.lifecycle("Converting discord apk to jar")
+
             val reader: BaseDexFileReader = MultiDexFileReader.open(Files.readAllBytes(discord.apkFile.toPath()))
             Dex2jar.from(reader).topoLogicalSort().skipDebug(false).noCode(true).to(discord.jarFile.toPath())
         }
