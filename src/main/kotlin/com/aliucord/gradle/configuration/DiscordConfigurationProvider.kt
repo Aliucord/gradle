@@ -37,18 +37,23 @@ class DiscordConfigurationProvider : IConfigurationProvider {
         get() = "discord"
 
     override fun provide(project: Project, dependency: Dependency) {
-        val version = if (dependency.version == "aliucord-SNAPSHOT") run fetch@ {
-            if (aliucordSnapshot != null) return@fetch aliucordSnapshot!!
-            project.logger.lifecycle("Fetching discord version")
-            val data = JsonSlurper().parse(URL("https://raw.githubusercontent.com/Aliucord/Aliucord/builds/data.json")) as Map<*, *>
-            val versionCode = parseInt(data["versionCode"] as String)
-            project.logger.lifecycle("Fetched discord version: $versionCode")
-            versionCode.also { aliucordSnapshot = versionCode }
-        } else parseInt(dependency.version)
+        val version = when (dependency.version) {
+            "aliucord-SNAPSHOT" -> {
+                if (aliucordSnapshot == null) {
+                    project.logger.lifecycle("Fetching discord version")
+                    val data =
+                        JsonSlurper().parse(URL("https://raw.githubusercontent.com/Aliucord/Aliucord/builds/data.json")) as Map<*, *>
+                    aliucordSnapshot = parseInt(data["versionCode"] as String)
+                    project.logger.lifecycle("Fetched discord version: $aliucordSnapshot")
+                }
+
+                aliucordSnapshot!!
+            }
+            else -> parseInt(dependency.version)
+        }
 
         val extension = project.extensions.getAliucord()
-        val discord = DiscordInfo(extension, version)
-        extension.discord = discord
+        val discord = DiscordInfo(extension, version).also { extension.discord = it }
 
         discord.cache.mkdirs()
 
