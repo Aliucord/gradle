@@ -20,6 +20,7 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.internal.os.OperatingSystem
 
 abstract class CompileDexTask : Exec() {
     @get:OutputFile
@@ -30,8 +31,10 @@ abstract class CompileDexTask : Exec() {
 
         val android = project.extensions.getByName("android") as BaseExtension
 
-        executable =
-            android.sdkDirectory.resolve("build-tools").resolve(android.buildToolsVersion).resolve("d8").absolutePath
+        executable = android.sdkDirectory.resolve("build-tools")
+            .resolve(android.buildToolsVersion)
+            .resolve(if (OperatingSystem.current().isWindows) "d8.bat" else "d8")
+            .absolutePath
 
         args("--output")
         val outputFile = outputFile.get().asFile.parent
