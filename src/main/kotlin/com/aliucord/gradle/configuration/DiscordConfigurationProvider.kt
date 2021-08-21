@@ -21,6 +21,7 @@ import com.aliucord.gradle.getAliucord
 import com.googlecode.d2j.dex.Dex2jar
 import com.googlecode.d2j.reader.BaseDexFileReader
 import com.googlecode.d2j.reader.MultiDexFileReader
+import groovy.json.JsonSlurper
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
 import java.lang.Integer.parseInt
@@ -32,8 +33,16 @@ class DiscordConfigurationProvider : IConfigurationProvider {
         get() = "discord"
 
     override fun provide(project: Project, dependency: Dependency) {
+        val version = if (dependency.version == "aliucord-SNAPSHOT") {
+            project.logger.lifecycle("Fetching discord version")
+            val data = JsonSlurper().parse(URL("https://raw.githubusercontent.com/Aliucord/Aliucord/builds/data.json")) as Map<*, *>
+            val v = data["versionCode"] as String
+            project.logger.lifecycle("Discord version: $v")
+            v
+        } else dependency.version
+
         val extension = project.extensions.getAliucord()
-        val discord = DiscordInfo(extension, parseInt(dependency.version))
+        val discord = DiscordInfo(extension, parseInt(version))
         extension.discord = discord
 
         discord.cache.mkdirs()
