@@ -29,20 +29,26 @@ import java.net.URL
 import java.nio.file.Files
 
 class DiscordConfigurationProvider : IConfigurationProvider {
+    companion object {
+        private var aliucordSnapshot: Int? = null
+    }
+
     override val name: String
         get() = "discord"
 
     override fun provide(project: Project, dependency: Dependency) {
-        val version = if (dependency.version == "aliucord-SNAPSHOT") {
+        val version = if (dependency.version == "aliucord-SNAPSHOT") run fetch@ {
+            if (aliucordSnapshot != null) return@fetch aliucordSnapshot!!
             project.logger.lifecycle("Fetching discord version")
             val data = JsonSlurper().parse(URL("https://raw.githubusercontent.com/Aliucord/Aliucord/builds/data.json")) as Map<*, *>
-            val v = data["versionCode"] as String
+            val v = parseInt(data["versionCode"] as String)
             project.logger.lifecycle("Discord version: $v")
+            aliucordSnapshot = v
             v
-        } else dependency.version
+        } else parseInt(dependency.version)
 
         val extension = project.extensions.getAliucord()
-        val discord = DiscordInfo(extension, parseInt(version))
+        val discord = DiscordInfo(extension, version)
         extension.discord = discord
 
         discord.cache.mkdirs()
