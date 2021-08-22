@@ -16,37 +16,63 @@
 package com.aliucord.gradle.task
 
 import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.internal.errors.MessageReceiverImpl
+import com.android.build.gradle.options.SyncOptions.ErrorFormatMode
+import com.android.builder.dexing.ClassFileInputs
+import com.android.builder.dexing.DexArchiveBuilder
+import com.android.builder.dexing.DexParameters
+import com.android.builder.dexing.r8.ClassFileProviderFactory
+import com.google.common.io.Closer
+import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.compile.JavaCompile
-import org.gradle.internal.os.OperatingSystem
+import org.slf4j.LoggerFactory
+import java.io.File
+import java.nio.file.Path
 
-abstract class CompileDexTask : Exec() {
+abstract class CompileDexTask : DefaultTask() {
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
 
-    override fun exec() {
+    @Suppress("UnstableApiUsage")
+    @TaskAction
+    fun compileDex() {
+        val android = project.extensions.getByName("android") as BaseExtension
         val compileTask = project.tasks.getByName("compileDebugJavaWithJavac") as JavaCompile
 
-        val android = project.extensions.getByName("android") as BaseExtension
+        val dexOutputDir = outputFile.get().asFile.parentFile
 
-        executable = android.sdkDirectory.resolve("build-tools")
-            .resolve(android.buildToolsVersion)
-            .resolve(if (OperatingSystem.current().isWindows) "d8.bat" else "d8")
-            .absolutePath
+        Closer.create().use { closer ->
+            val dexBuilder = DexArchiveBuilder.createD8DexBuilder(
+                DexParameters(
+                    minSdkVersion = android.defaultConfig.maxSdkVersion ?: 24,
+                    debuggable = true,
+                    dexPerClass = false,
+                    withDesugaring = true,
+                    desugarBootclasspath = ClassFileProviderFactory(android.bootClasspath.map(File::toPath))
+                        .also { closer.register(it) },
+                    desugarClasspath = ClassFileProviderFactory(listOf<Path>()).also { closer.register(it) },
+                    coreLibDesugarConfig = null,
+                    coreLibDesugarOutputKeepRuleFile = null,
+                    messageReceiver = MessageReceiverImpl(
+                        ErrorFormatMode.HUMAN_READABLE,
+                        LoggerFactory.getLogger(CompileDexTask::class.java)
+                    )
+                )
+            )
 
-        args("--output")
-        val outputFile = outputFile.get().asFile.parent
-        args(outputFile)
+            ClassFileInputs.fromPath(compileTask.destinationDirectory.asFile.get().toPath()).use { classFileInput ->
+                classFileInput.entries { _, _ -> true }.use { classesInput ->
+                    dexBuilder.convert(
+                        classesInput,
+                        dexOutputDir.toPath()
+                    )
+                }
+            }
+        }
 
-        args(
-            compileTask.destinationDirectory.asFile.get().walkTopDown().filter { it.extension == "class" }
-                .map { it.absolutePath }.asIterable()
-        )
-
-        super.exec()
-
-        logger.lifecycle("Compiled dex to $outputFile")
+        logger.lifecycle("Compiled dex to ${outputFile.get()}")
     }
 }
