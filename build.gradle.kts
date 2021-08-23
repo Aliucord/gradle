@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.4.31"
+    kotlin("jvm") version "1.5.21"
     id("java-gradle-plugin")
     id("maven-publish")
 }
@@ -20,11 +20,11 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation(gradleApi())
+    compileOnly(gradleApi())
 
-    implementation("com.google.guava:guava:30.1.1-jre")
-    implementation("com.android.tools:sdk-common:30.0.0")
-    implementation("com.android.tools.build:gradle:7.0.0")
+    compileOnly("com.google.guava:guava:30.1.1-jre")
+    compileOnly("com.android.tools:sdk-common:30.0.0")
+    compileOnly("com.android.tools.build:gradle:7.0.0")
 
     implementation("com.github.Aliucord.dex2jar:dex-translator:d5a5efb06c")
     implementation("com.github.Aliucord.jadx:jadx-core:1a213e978d")

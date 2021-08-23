@@ -15,8 +15,10 @@
 
 package com.aliucord.gradle
 
+import com.aliucord.gradle.entities.Author
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionContainer
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import javax.inject.Inject
 
@@ -24,9 +26,25 @@ abstract class AliucordExtension @Inject constructor(project: Project) {
     val projectType: Property<ProjectType> =
         project.objects.property(ProjectType::class.java).convention(ProjectType.PLUGIN)
 
+    val authors: ListProperty<Author> = project.objects.listProperty(Author::class.java)
+
+    fun author(name: String, id: Long) {
+        authors.add(Author(name, id))
+    }
+
+    val updateUrl: Property<String> = project.objects.property(String::class.java)
+    val changelog: Property<String> = project.objects.property(String::class.java)
+    val changelogMedia: Property<String> = project.objects.property(String::class.java)
+
+    val minimumDiscordVersion: Property<Int> = project.objects.property(Int::class.java)
+    val buildUrl: Property<String> = project.objects.property(String::class.java)
+
     val userCache = project.gradle.gradleUserHomeDir.resolve("caches").resolve("aliucord")
 
     var discord: DiscordInfo? = null
+        internal set
+
+    internal var pluginClassName: String? = null
 }
 
 class DiscordInfo(extension: AliucordExtension, val version: Int) {
@@ -38,4 +56,8 @@ class DiscordInfo(extension: AliucordExtension, val version: Int) {
 
 fun ExtensionContainer.getAliucord(): AliucordExtension {
     return getByName("aliucord") as AliucordExtension
+}
+
+fun ExtensionContainer.findAliucord(): AliucordExtension? {
+    return findByName("aliucord") as AliucordExtension?
 }
