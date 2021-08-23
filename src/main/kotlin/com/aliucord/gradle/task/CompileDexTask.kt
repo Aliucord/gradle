@@ -24,15 +24,19 @@ import com.android.builder.dexing.DexParameters
 import com.android.builder.dexing.r8.ClassFileProviderFactory
 import com.google.common.io.Closer
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.*
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 
 abstract class CompileDexTask : DefaultTask() {
+    @InputFiles
+    @SkipWhenEmpty
+    @IgnoreEmptyDirectories
+    val input: ConfigurableFileCollection = project.objects.fileCollection()
+
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
 
@@ -40,7 +44,6 @@ abstract class CompileDexTask : DefaultTask() {
     @TaskAction
     fun compileDex() {
         val android = project.extensions.getByName("android") as BaseExtension
-        val compileTask = project.tasks.getByName("compileDebugJavaWithJavac") as JavaCompile
 
         val dexOutputDir = outputFile.get().asFile.parentFile
 
@@ -63,12 +66,14 @@ abstract class CompileDexTask : DefaultTask() {
                 )
             )
 
-            ClassFileInputs.fromPath(compileTask.destinationDirectory.asFile.get().toPath()).use { classFileInput ->
-                classFileInput.entries { _, _ -> true }.use { classesInput ->
-                    dexBuilder.convert(
-                        classesInput,
-                        dexOutputDir.toPath()
-                    )
+            for (inputDirectory in input) {
+                ClassFileInputs.fromPath(inputDirectory.toPath()).use { classFileInput ->
+                    classFileInput.entries { _, _ -> true }.use { classesInput ->
+                        dexBuilder.convert(
+                            classesInput,
+                            dexOutputDir.toPath()
+                        )
+                    }
                 }
             }
         }

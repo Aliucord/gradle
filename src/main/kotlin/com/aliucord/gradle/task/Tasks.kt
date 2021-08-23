@@ -33,18 +33,13 @@ fun registerTasks(project: Project) {
 
     val compileDex = project.tasks.register("compileDex", CompileDexTask::class.java) {
         it.group = TASK_GROUP
-        val classesDir = project.buildDir.resolve("intermediates").resolve("classes")
-        val compileDebugJavaWithJavacTask = project.tasks.getByName("compileDebugJavaWithJavac") as AbstractCompile
-        compileDebugJavaWithJavacTask.destinationDirectory.set(classesDir)
-        it.dependsOn(compileDebugJavaWithJavacTask)
-        val compileDebugKotlinTask = project.tasks.findByName("compileDebugKotlin") as AbstractCompile?
-        if (compileDebugKotlinTask != null) {
-            compileDebugKotlinTask.destinationDirectory.set(classesDir)
-            it.dependsOn(compileDebugKotlinTask)
-        }
 
-        it.outputs.upToDateWhen {
-            return@upToDateWhen !compileDebugJavaWithJavacTask.didWork && !(compileDebugKotlinTask?.didWork ?: false)
+        for (name in arrayOf("compileDebugJavaWithJavac", "compileDebugKotlin")) {
+            val task = project.tasks.getByName(name) as AbstractCompile?
+            if (task != null) {
+                it.dependsOn(task)
+                it.input.from(task.destinationDirectory)
+            }
         }
 
         it.outputFile.set(project.buildDir.resolve("intermediates").resolve("classes.dex"))
@@ -59,10 +54,6 @@ fun registerTasks(project: Project) {
             it.group = TASK_GROUP
             val compileDexTask = compileDex.get()
             it.dependsOn(compileDexTask)
-
-            it.outputs.upToDateWhen {
-                return@upToDateWhen !compileDexTask.didWork
-            }
 
             if (extension.projectType.get() == ProjectType.PLUGIN) {
                 val nameFile = project.buildDir.resolve("intermediates").resolve("ac-plugin")
