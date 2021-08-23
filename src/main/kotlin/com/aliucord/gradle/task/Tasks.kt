@@ -37,9 +37,8 @@ fun registerTasks(project: Project) {
         val compileDebugJavaWithJavacTask = project.tasks.getByName("compileDebugJavaWithJavac") as AbstractCompile
         compileDebugJavaWithJavacTask.destinationDirectory.set(classesDir)
         it.dependsOn(compileDebugJavaWithJavacTask)
-        var compileDebugKotlinTask: AbstractCompile? = null
-        if (project.tasks.asMap.containsKey("compileDebugKotlin")) {
-            compileDebugKotlinTask = project.tasks.getByName("compileDebugKotlin") as AbstractCompile
+        val compileDebugKotlinTask = project.tasks.findByName("compileDebugKotlin") as AbstractCompile?
+        if (compileDebugKotlinTask != null) {
             compileDebugKotlinTask.destinationDirectory.set(classesDir)
             it.dependsOn(compileDebugKotlinTask)
         }
