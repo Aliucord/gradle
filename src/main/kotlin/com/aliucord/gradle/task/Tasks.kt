@@ -20,7 +20,7 @@ import com.aliucord.gradle.getAliucord
 import org.gradle.api.Project
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.bundling.Zip
-import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.compile.AbstractCompile
 
 const val TASK_GROUP = "aliucord"
 
@@ -33,11 +33,19 @@ fun registerTasks(project: Project) {
 
     val compileDex = project.tasks.register("compileDex", CompileDexTask::class.java) {
         it.group = TASK_GROUP
-        val compileDebugJavaWithJavacTask = project.tasks.getByName("compileDebugJavaWithJavac") as JavaCompile
+        val classesDir = project.buildDir.resolve("intermediates").resolve("classes")
+        val compileDebugJavaWithJavacTask = project.tasks.getByName("compileDebugJavaWithJavac") as AbstractCompile
+        compileDebugJavaWithJavacTask.destinationDirectory.set(classesDir)
         it.dependsOn(compileDebugJavaWithJavacTask)
+        var compileDebugKotlinTask: AbstractCompile? = null
+        if (project.tasks.asMap.containsKey("compileDebugKotlin")) {
+            compileDebugKotlinTask = project.tasks.getByName("compileDebugKotlin") as AbstractCompile
+            compileDebugKotlinTask.destinationDirectory.set(classesDir)
+            it.dependsOn(compileDebugKotlinTask)
+        }
 
         it.outputs.upToDateWhen {
-            return@upToDateWhen !compileDebugJavaWithJavacTask.didWork
+            return@upToDateWhen !compileDebugJavaWithJavacTask.didWork && !(compileDebugKotlinTask?.didWork ?: false)
         }
 
         it.outputFile.set(project.buildDir.resolve("intermediates").resolve("classes.dex"))
