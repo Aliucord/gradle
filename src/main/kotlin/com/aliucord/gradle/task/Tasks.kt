@@ -20,7 +20,7 @@ import com.aliucord.gradle.getAliucord
 import org.gradle.api.Project
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.bundling.Zip
-import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.compile.AbstractCompile
 
 const val TASK_GROUP = "aliucord"
 
@@ -33,11 +33,13 @@ fun registerTasks(project: Project) {
 
     val compileDex = project.tasks.register("compileDex", CompileDexTask::class.java) {
         it.group = TASK_GROUP
-        val compileDebugJavaWithJavacTask = project.tasks.getByName("compileDebugJavaWithJavac") as JavaCompile
-        it.dependsOn(compileDebugJavaWithJavacTask)
 
-        it.outputs.upToDateWhen {
-            return@upToDateWhen !compileDebugJavaWithJavacTask.didWork
+        for (name in arrayOf("compileDebugJavaWithJavac", "compileDebugKotlin")) {
+            val task = project.tasks.getByName(name) as AbstractCompile?
+            if (task != null) {
+                it.dependsOn(task)
+                it.input.from(task.destinationDirectory)
+            }
         }
 
         it.outputFile.set(project.buildDir.resolve("intermediates").resolve("classes.dex"))
@@ -52,10 +54,6 @@ fun registerTasks(project: Project) {
             it.group = TASK_GROUP
             val compileDexTask = compileDex.get()
             it.dependsOn(compileDexTask)
-
-            it.outputs.upToDateWhen {
-                return@upToDateWhen !compileDexTask.didWork
-            }
 
             if (extension.projectType.get() == ProjectType.PLUGIN) {
                 val nameFile = project.buildDir.resolve("intermediates").resolve("ac-plugin")
