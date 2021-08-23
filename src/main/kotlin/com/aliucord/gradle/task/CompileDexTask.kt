@@ -30,6 +30,7 @@ import org.gradle.api.tasks.*
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
+import java.util.*
 
 abstract class CompileDexTask : DefaultTask() {
     @InputFiles
@@ -66,16 +67,17 @@ abstract class CompileDexTask : DefaultTask() {
                 )
             )
 
-            for (inputDirectory in input) {
-                ClassFileInputs.fromPath(inputDirectory.toPath()).use { classFileInput ->
-                    classFileInput.entries { _, _ -> true }.use { classesInput ->
-                        dexBuilder.convert(
-                            classesInput,
-                            dexOutputDir.toPath()
-                        )
-                    }
+            val fileStreams =
+                input.map { input -> ClassFileInputs.fromPath(input.toPath()).use { it.entries { _, _ -> true } } }
+                    .toTypedArray()
+
+            Arrays.stream(fileStreams).flatMap { it }
+                .use { classesInput ->
+                    dexBuilder.convert(
+                        classesInput,
+                        dexOutputDir.toPath()
+                    )
                 }
-            }
         }
 
         logger.lifecycle("Compiled dex to ${outputFile.get()}")
