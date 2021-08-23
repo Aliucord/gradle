@@ -35,7 +35,7 @@ fun registerTasks(project: Project) {
         it.group = TASK_GROUP
 
         for (name in arrayOf("compileDebugJavaWithJavac", "compileDebugKotlin")) {
-            val task = project.tasks.getByName(name) as AbstractCompile?
+            val task = project.tasks.findByName(name) as AbstractCompile?
             if (task != null) {
                 it.dependsOn(task)
                 it.input.from(task.destinationDirectory)
