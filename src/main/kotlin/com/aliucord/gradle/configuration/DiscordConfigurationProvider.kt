@@ -71,6 +71,6 @@ class DiscordConfigurationProvider : IConfigurationProvider {
             Dex2jar.from(reader).topoLogicalSort().skipDebug(false).noCode(true).to(discord.jarFile.toPath())
         }
 
-        project.dependencies.add("implementation", project.files(discord.jarFile))
+        project.dependencies.add("compileOnly", project.files(discord.jarFile))
     }
 }
