@@ -15,6 +15,7 @@
 
 package com.aliucord.gradle.task
 
+import com.aliucord.gradle.getAliucord
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.options.SyncOptions.ErrorFormatMode
@@ -27,10 +28,15 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.*
+import org.objectweb.asm.AnnotationVisitor
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.Opcodes
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
 import java.util.*
+import java.util.stream.Collectors
 
 abstract class CompileDexTask : DefaultTask() {
     @InputFiles
@@ -40,6 +46,9 @@ abstract class CompileDexTask : DefaultTask() {
 
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
+
+    @get:OutputFile
+    abstract val pluginClassFile: RegularFileProperty
 
     @Suppress("UnstableApiUsage")
     @TaskAction
@@ -73,10 +82,33 @@ abstract class CompileDexTask : DefaultTask() {
 
             Arrays.stream(fileStreams).flatMap { it }
                 .use { classesInput ->
+                    val files = classesInput.collect(Collectors.toList())
+
                     dexBuilder.convert(
-                        classesInput,
+                        files.stream(),
                         dexOutputDir.toPath()
                     )
+
+                    for (file in files) {
+                        val reader = ClassReader(file.readAllBytes())
+
+                        reader.accept(object : ClassVisitor(Opcodes.ASM9) {
+                            override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor {
+                                if (descriptor == "Lcom/aliucord/annotations/AliucordPlugin;") {
+                                    val aliucord = project.extensions.getAliucord()
+
+                                    require(aliucord.pluginClassName == null) {
+                                        "Only 1 active plugin class per project is supported"
+                                    }
+
+                                    aliucord.pluginClassName = reader.className.replace('/', '.')
+                                        .also { pluginClassFile.asFile.orNull?.writeText(it) }
+                                }
+
+                                return object : AnnotationVisitor(Opcodes.ASM9) {}
+                            }
+                        }, 0)
+                    }
                 }
         }
 
