@@ -77,8 +77,14 @@ fun registerTasks(project: Project) {
 
                 it.from(manifestFile)
                 it.doFirst {
-                    require(project.version != "unspecified") {
-                        "No version is set"
+                    val version =
+                            if (project.version != "unspecified")
+                                project.version
+                            else
+                                extension.annotatedVersion
+
+                    requireNotNull(version) {
+                        "No version is set. Please set the version in either the @AliucordPlugin annotation or the project configuration"
                     }
 
                     if (extension.pluginClassName == null) {
@@ -87,7 +93,7 @@ fun registerTasks(project: Project) {
                         }
                     }
 
-                    require(extension.pluginClassName != null) {
+                    requireNotNull(extension.pluginClassName) {
                         "No plugin class found, make sure your plugin class is annotated with @AliucordPlugin"
                     }
 
@@ -96,12 +102,12 @@ fun registerTasks(project: Project) {
                             PluginManifest(
                                 pluginClassName = extension.pluginClassName!!,
                                 name = project.name,
-                                version = project.version.toString(),
-                                description = project.description,
+                                version = version.toString(),
+                                description = extension.annotatedDescription ?: project.description,
                                 authors = extension.authors.get(),
                                 updateUrl = extension.updateUrl.orNull,
-                                changelog = extension.changelog.orNull,
-                                changelogMedia = extension.changelogMedia.orNull
+                                changelog = extension.annotatedChangelog ?: extension.changelog.orNull,
+                                changelogMedia = extension.annotatedChangelogMedia ?: extension.changelogMedia.orNull
                             )
                         ).toPrettyString()
                     )

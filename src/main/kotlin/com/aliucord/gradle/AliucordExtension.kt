@@ -45,6 +45,10 @@ abstract class AliucordExtension @Inject constructor(project: Project) {
         internal set
 
     internal var pluginClassName: String? = null
+    internal var annotatedVersion: String? = null
+    internal var annotatedDescription: String? = null
+    internal var annotatedChangelog: String? = null
+    internal var annotatedChangelogMedia: String? = null
 }
 
 class DiscordInfo(extension: AliucordExtension, val version: Int) {

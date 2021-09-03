@@ -15,6 +15,7 @@
 
 package com.aliucord.gradle.task
 
+import com.aliucord.gradle.AliucordExtension
 import com.aliucord.gradle.getAliucord
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
@@ -93,7 +94,7 @@ abstract class CompileDexTask : DefaultTask() {
                         val reader = ClassReader(file.readAllBytes())
 
                         reader.accept(object : ClassVisitor(Opcodes.ASM9) {
-                            override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor {
+                            override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor? {
                                 if (descriptor == "Lcom/aliucord/annotations/AliucordPlugin;") {
                                     val aliucord = project.extensions.getAliucord()
 
@@ -103,9 +104,11 @@ abstract class CompileDexTask : DefaultTask() {
 
                                     aliucord.pluginClassName = reader.className.replace('/', '.')
                                         .also { pluginClassFile.asFile.orNull?.writeText(it) }
+
+                                    return PluginAnnotationVisitor(aliucord)
                                 }
 
-                                return object : AnnotationVisitor(Opcodes.ASM9) {}
+                                return null
                             }
                         }, 0)
                     }
@@ -113,5 +116,20 @@ abstract class CompileDexTask : DefaultTask() {
         }
 
         logger.lifecycle("Compiled dex to ${outputFile.get()}")
+    }
+}
+
+
+class PluginAnnotationVisitor(private val ext: AliucordExtension) : AnnotationVisitor(Opcodes.ASM9) {
+    override fun visit(name: String, v: Any) {
+        if (v is String && v.isNotBlank()) {
+            when (name) {
+                "version" -> ext.annotatedVersion = v
+                "description" -> ext.annotatedDescription = v
+                "changelog" -> ext.annotatedChangelog = v
+                "changelogMedia" -> ext.annotatedChangelogMedia = v
+            }
+        }
+        super.visit(name, v)
     }
 }
