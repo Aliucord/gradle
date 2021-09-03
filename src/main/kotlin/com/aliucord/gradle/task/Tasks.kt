@@ -77,8 +77,8 @@ fun registerTasks(project: Project) {
 
                 it.from(manifestFile)
                 it.doFirst {
-                    require(project.version != "unspecified") {
-                        "No version is set"
+                    require(project.version != Project.DEFAULT_VERSION) {
+                        "No version is set. Please set the version in either the @AliucordPlugin annotation or the project configuration"
                     }
 
                     if (extension.pluginClassName == null) {
@@ -87,7 +87,7 @@ fun registerTasks(project: Project) {
                         }
                     }
 
-                    require(extension.pluginClassName != null) {
+                    requireNotNull(extension.pluginClassName) {
                         "No plugin class found, make sure your plugin class is annotated with @AliucordPlugin"
                     }
 

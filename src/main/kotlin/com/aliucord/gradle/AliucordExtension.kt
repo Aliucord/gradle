@@ -22,7 +22,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import javax.inject.Inject
 
-abstract class AliucordExtension @Inject constructor(project: Project) {
+abstract class AliucordExtension @Inject constructor(val project: Project) {
     val projectType: Property<ProjectType> =
         project.objects.property(ProjectType::class.java).convention(ProjectType.PLUGIN)
 
