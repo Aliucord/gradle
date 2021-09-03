@@ -77,9 +77,7 @@ fun registerTasks(project: Project) {
 
                 it.from(manifestFile)
                 it.doFirst {
-                    val version = extension.annotatedVersion ?: project.version
-
-                    require(version != Project.DEFAULT_VERSION) {
+                    require(extension.version != Project.DEFAULT_VERSION) {
                         "No version is set. Please set the version in either the @AliucordPlugin annotation or the project configuration"
                     }
 
@@ -98,12 +96,12 @@ fun registerTasks(project: Project) {
                             PluginManifest(
                                 pluginClassName = extension.pluginClassName!!,
                                 name = project.name,
-                                version = version.toString(),
-                                description = extension.annotatedDescription ?: project.description,
+                                version = extension.version.toString(),
+                                description = extension.description,
                                 authors = extension.authors.get(),
                                 updateUrl = extension.updateUrl.orNull,
-                                changelog = extension.annotatedChangelog ?: extension.changelog.orNull,
-                                changelogMedia = extension.annotatedChangelogMedia ?: extension.changelogMedia.orNull
+                                changelog = extension.changelog.orNull,
+                                changelogMedia = extension.changelogMedia.orNull
                             )
                         ).toPrettyString()
                     )

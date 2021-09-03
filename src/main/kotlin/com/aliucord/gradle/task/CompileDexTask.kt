@@ -124,10 +124,10 @@ class PluginAnnotationVisitor(private val ext: AliucordExtension) : AnnotationVi
     override fun visit(name: String, v: Any) {
         if (v is String && v.isNotBlank()) {
             when (name) {
-                "version" -> ext.annotatedVersion = v
-                "description" -> ext.annotatedDescription = v
-                "changelog" -> ext.annotatedChangelog = v.trimIndent()
-                "changelogMedia" -> ext.annotatedChangelogMedia = v
+                "version" -> ext.version = v
+                "description" -> ext.description = v
+                "changelog" -> ext.changelog.set(v.trimIndent())
+                "changelogMedia" -> ext.changelogMedia.set(v)
             }
         }
         super.visit(name, v)
