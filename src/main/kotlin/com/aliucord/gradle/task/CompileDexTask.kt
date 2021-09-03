@@ -94,7 +94,7 @@ abstract class CompileDexTask : DefaultTask() {
                         val reader = ClassReader(file.readAllBytes())
 
                         reader.accept(object : ClassVisitor(Opcodes.ASM9) {
-                            override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor? {
+                            override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor {
                                 if (descriptor == "Lcom/aliucord/annotations/AliucordPlugin;") {
                                     val aliucord = project.extensions.getAliucord()
 
@@ -108,7 +108,7 @@ abstract class CompileDexTask : DefaultTask() {
                                     return PluginAnnotationVisitor(aliucord)
                                 }
 
-                                return null
+                                return object : AnnotationVisitor(Opcodes.ASM9) {}
                             }
                         }, 0)
                     }
@@ -126,7 +126,7 @@ class PluginAnnotationVisitor(private val ext: AliucordExtension) : AnnotationVi
             when (name) {
                 "version" -> ext.annotatedVersion = v
                 "description" -> ext.annotatedDescription = v
-                "changelog" -> ext.annotatedChangelog = v
+                "changelog" -> ext.annotatedChangelog = v.trimIndent()
                 "changelogMedia" -> ext.annotatedChangelogMedia = v
             }
         }
