@@ -124,8 +124,8 @@ class PluginAnnotationVisitor(private val ext: AliucordExtension) : AnnotationVi
     override fun visit(name: String, v: Any) {
         if (v is String && v.isNotBlank()) {
             when (name) {
-                "version" -> ext.version = v
-                "description" -> ext.description = v
+                "version" -> ext.project.version = v
+                "description" -> ext.project.description = v
                 "changelog" -> ext.changelog.set(v.trimIndent())
                 "changelogMedia" -> ext.changelogMedia.set(v)
             }
