@@ -29,7 +29,7 @@ dependencies {
     implementation("com.github.Aliucord.dex2jar:dex-translator:d5a5efb06c")
     implementation("com.github.Aliucord.jadx:jadx-core:1a213e978d")
     implementation("com.github.Aliucord.jadx:jadx-dex-input:1a213e978d")
-    implementation("com.github.vidstige:jadb:v1.2.1")
+    implementation("com.github.js6pak:jadb:fix-modified-time-SNAPSHOT")
 }
 
 gradlePlugin {
