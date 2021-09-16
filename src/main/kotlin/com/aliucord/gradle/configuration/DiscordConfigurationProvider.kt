@@ -60,7 +60,7 @@ class DiscordConfigurationProvider : IConfigurationProvider {
         if (!discord.apkFile.exists()) {
             project.logger.lifecycle("Downloading discord apk")
 
-            val url = URL("https://aliucord.tk/download/discord?v=${discord.version}")
+            val url = URL("https://aliucord.com/download/discord?v=${discord.version}")
             discord.apkFile.copyInputStreamToFile(url.openStream())
         }
 
