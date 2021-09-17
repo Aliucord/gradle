@@ -119,6 +119,7 @@ fun registerTasks(project: Project) {
                 }
             } else {
                 val zip = it as Zip
+                zip.isPreserveFileTimestamps = false
                 zip.archiveBaseName.set(project.name)
                 zip.archiveVersion.set("")
                 zip.destinationDirectory.set(project.buildDir)
