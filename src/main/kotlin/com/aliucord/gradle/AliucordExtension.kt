@@ -39,6 +39,8 @@ abstract class AliucordExtension @Inject constructor(project: Project) {
     val minimumDiscordVersion: Property<Int> = project.objects.property(Int::class.java)
     val buildUrl: Property<String> = project.objects.property(String::class.java)
 
+    val excludeFromUpdaterJson: Property<Boolean> = project.objects.property(Boolean::class.java).convention(false)
+
     val userCache = project.gradle.gradleUserHomeDir.resolve("caches").resolve("aliucord")
 
     var discord: DiscordInfo? = null
