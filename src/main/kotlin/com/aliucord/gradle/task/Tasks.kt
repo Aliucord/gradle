@@ -63,7 +63,7 @@ fun registerTasks(project: Project) {
     }
 
     project.afterEvaluate {
-        project.tasks.register(
+        val make = project.tasks.register(
             "make",
             if (extension.projectType.get() == ProjectType.INJECTOR) Copy::class.java else Zip::class.java
         )
@@ -133,7 +133,9 @@ fun registerTasks(project: Project) {
 
         project.tasks.register("deployWithAdb", DeployWithAdbTask::class.java) {
             it.group = TASK_GROUP
-            it.dependsOn("make")
+            it.dependsOn(make)
         }
+
+        project.rootProject.tasks.getByName("generateUpdaterJson").dependsOn(make)
     }
 }
