@@ -20,12 +20,38 @@ data class Author(
     val id: Long,
 )
 
+class Links : HashMap<String?, String?>() {
+    companion object {
+        var GITHUB = "github"
+        var SOURCE = "source"
+    }
+
+    var github: String?
+        get() = get(GITHUB)
+        set(value) {
+            put(GITHUB, value)
+        }
+
+    var source: String?
+        get() {
+            if (containsKey(GITHUB)) {
+                return github
+            }
+
+            return get(SOURCE)
+        }
+        set(value) {
+            put(SOURCE, value)
+        }
+}
+
 data class PluginManifest(
     val pluginClassName: String,
     val name: String,
     val version: String,
     val description: String?,
     val authors: List<Author>,
+    val links: Links,
 
     val updateUrl: String?,
     val changelog: String?,

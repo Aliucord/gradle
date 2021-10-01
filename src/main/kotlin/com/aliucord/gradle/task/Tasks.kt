@@ -127,6 +127,7 @@ fun registerTasks(project: Project) {
                                 version = project.version.toString(),
                                 description = project.description,
                                 authors = extension.authors.get(),
+                                links = extension.links,
                                 updateUrl = extension.updateUrl.orNull,
                                 changelog = extension.changelog.orNull,
                                 changelogMedia = extension.changelogMedia.orNull
@@ -149,6 +150,7 @@ fun registerTasks(project: Project) {
                 val zip = it as Zip
 
                 zip.dependsOn(compileResources.get())
+                zip.isPreserveFileTimestamps = false
                 zip.archiveBaseName.set(project.name)
                 zip.archiveVersion.set("")
                 zip.destinationDirectory.set(project.buildDir)

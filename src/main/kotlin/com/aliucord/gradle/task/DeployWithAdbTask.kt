@@ -20,13 +20,20 @@ import com.aliucord.gradle.getAliucord
 import com.android.build.gradle.BaseExtension
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.AbstractCopyTask
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.options.Option
 import se.vidstige.jadb.AdbServerLauncher
 import se.vidstige.jadb.JadbConnection
 import se.vidstige.jadb.RemoteFile
 import se.vidstige.jadb.Subprocess
+import java.nio.charset.StandardCharsets
 
 abstract class DeployWithAdbTask : DefaultTask() {
+    @get:Input
+    @set:Option(option = "wait-for-debugger", description = "Enables debugging flag when starting the discord activity")
+    var waitForDebugger: Boolean = false
+
     @TaskAction
     fun deployWithAdb() {
         val extension = project.extensions.getAliucord()
@@ -59,8 +66,19 @@ abstract class DeployWithAdbTask : DefaultTask() {
         device.push(file, RemoteFile(path + file.name))
 
         if (extension.projectType.get() != ProjectType.INJECTOR) {
-            device.executeShell("am", "force-stop", "com.aliucord")
-            device.executeShell("monkey", "-p", "com.aliucord", "-c", "android.intent.category.LAUNCHER", "1")
+            val args = arrayListOf("start", "-S", "-n", "com.aliucord/com.discord.app.AppActivity\$Main")
+
+            if (waitForDebugger) {
+                args.add("-D")
+            }
+
+            val response = String(
+                device.executeShell("am", *args.toTypedArray()).readAllBytes(), StandardCharsets.UTF_8
+            )
+
+            if (response.contains("Error")) {
+                logger.error(response)
+            }
         }
 
         logger.lifecycle("Deployed $file to ${device.serial}")

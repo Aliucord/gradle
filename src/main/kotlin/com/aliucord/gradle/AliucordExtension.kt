@@ -16,13 +16,14 @@
 package com.aliucord.gradle
 
 import com.aliucord.gradle.entities.Author
+import com.aliucord.gradle.entities.Links
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import javax.inject.Inject
 
-abstract class AliucordExtension @Inject constructor(project: Project) {
+abstract class AliucordExtension @Inject constructor(val project: Project) {
     val projectType: Property<ProjectType> =
         project.objects.property(ProjectType::class.java).convention(ProjectType.PLUGIN)
 
@@ -32,12 +33,25 @@ abstract class AliucordExtension @Inject constructor(project: Project) {
         authors.add(Author(name, id))
     }
 
+    val links: Links = Links()
+
+    fun github(url: String) {
+        links.github = url
+
+        if (!updateUrl.isPresent && !buildUrl.isPresent) {
+            updateUrl.set("$url/releases/latest/download/updater.json")
+            buildUrl.set("$url/releases/download/${project.version}/${project.name}.zip")
+        }
+    }
+
     val updateUrl: Property<String> = project.objects.property(String::class.java)
     val changelog: Property<String> = project.objects.property(String::class.java)
     val changelogMedia: Property<String> = project.objects.property(String::class.java)
 
     val minimumDiscordVersion: Property<Int> = project.objects.property(Int::class.java)
     val buildUrl: Property<String> = project.objects.property(String::class.java)
+
+    val excludeFromUpdaterJson: Property<Boolean> = project.objects.property(Boolean::class.java).convention(false)
 
     val userCache = project.gradle.gradleUserHomeDir.resolve("caches").resolve("aliucord")
 

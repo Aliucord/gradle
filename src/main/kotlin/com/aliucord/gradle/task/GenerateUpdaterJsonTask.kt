@@ -35,6 +35,10 @@ abstract class GenerateUpdaterJsonTask : DefaultTask() {
         for (subproject in project.allprojects) {
             val aliucord = subproject.extensions.findAliucord() ?: continue
 
+            if (aliucord.excludeFromUpdaterJson.get()) {
+                continue
+            }
+
             map[subproject.name] = UpdateInfo(
                 aliucord.minimumDiscordVersion.orNull ?: aliucord.discord?.version,
                 subproject.version.toString(),

@@ -28,10 +28,8 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.*
-import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.ClassReader
-import org.objectweb.asm.ClassVisitor
-import org.objectweb.asm.Opcodes
+import org.objectweb.asm.tree.ClassNode
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
@@ -92,22 +90,29 @@ abstract class CompileDexTask : DefaultTask() {
                     for (file in files) {
                         val reader = ClassReader(file.readAllBytes())
 
-                        reader.accept(object : ClassVisitor(Opcodes.ASM9) {
-                            override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor {
-                                if (descriptor == "Lcom/aliucord/annotations/AliucordPlugin;") {
+                        val classNode = ClassNode()
+                        reader.accept(classNode, 0)
+
+                        if (classNode.visibleAnnotations != null) {
+                            for (annotation in classNode.visibleAnnotations) {
+                                if (annotation.desc == "Lcom/aliucord/annotations/AliucordPlugin;") {
                                     val aliucord = project.extensions.getAliucord()
 
                                     require(aliucord.pluginClassName == null) {
                                         "Only 1 active plugin class per project is supported"
                                     }
 
-                                    aliucord.pluginClassName = reader.className.replace('/', '.')
+                                    for (method in classNode.methods) {
+                                        if (method.name == "getManifest" && method.desc == "()Lcom/aliucord/entities/Plugin\$Manifest;") {
+                                            throw IllegalArgumentException("Plugin class cannot override getManifest, use manifest.json system!")
+                                        }
+                                    }
+
+                                    aliucord.pluginClassName = classNode.name.replace('/', '.')
                                         .also { pluginClassFile.asFile.orNull?.writeText(it) }
                                 }
-
-                                return object : AnnotationVisitor(Opcodes.ASM9) {}
                             }
-                        }, 0)
+                        }
                     }
                 }
         }
