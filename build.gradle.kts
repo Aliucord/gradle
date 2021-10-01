@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    implementation(kotlin("stdlib"))
+    implementation(kotlin("stdlib", kotlin.coreLibrariesVersion))
     compileOnly(gradleApi())
 
     compileOnly("com.google.guava:guava:30.1.1-jre")
