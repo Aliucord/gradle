@@ -19,7 +19,6 @@ import com.aliucord.gradle.DiscordInfo
 import com.aliucord.gradle.copyInputStreamToFile
 import com.aliucord.gradle.getAliucord
 import com.googlecode.d2j.dex.Dex2jar
-import com.googlecode.d2j.reader.BaseDexFileReader
 import com.googlecode.d2j.reader.MultiDexFileReader
 import groovy.json.JsonSlurper
 import org.gradle.api.Project
@@ -27,6 +26,8 @@ import org.gradle.api.artifacts.Dependency
 import java.lang.Integer.parseInt
 import java.net.URL
 import java.nio.file.Files
+import java.nio.file.Path
+import java.util.zip.ZipException
 
 class DiscordConfigurationProvider : IConfigurationProvider {
     companion object {
@@ -57,20 +58,35 @@ class DiscordConfigurationProvider : IConfigurationProvider {
 
         discord.cache.mkdirs()
 
-        if (!discord.apkFile.exists()) {
-            project.logger.lifecycle("Downloading discord apk")
-
-            val url = URL("https://aliucord.com/download/discord?v=${discord.version}")
-            discord.apkFile.copyInputStreamToFile(url.openStream())
-        }
+        if (!discord.apkFile.exists()) downloadApk(project, discord)
 
         if (!discord.jarFile.exists()) {
+            val reader = try {
+                readDex(discord.apkFile.toPath())
+            } catch (_: ZipException) {
+                project.logger.lifecycle("APK corrupted, deleting apk")
+                downloadApk(project, discord)
+                readDex(discord.apkFile.toPath())
+            }
+
             project.logger.lifecycle("Converting discord apk to jar")
 
-            val reader: BaseDexFileReader = MultiDexFileReader.open(Files.readAllBytes(discord.apkFile.toPath()))
-            Dex2jar.from(reader).topoLogicalSort().skipDebug(false).noCode(true).to(discord.jarFile.toPath())
+            Dex2jar.from(reader)
+                .topoLogicalSort()
+                .skipDebug(false)
+                .noCode(true)
+                .to(discord.jarFile.toPath())
         }
 
         project.dependencies.add("compileOnly", project.files(discord.jarFile))
+    }
+
+    private fun readDex(path: Path) = MultiDexFileReader.open(Files.readAllBytes(path))
+
+    private fun downloadApk(project: Project, discord: DiscordInfo) {
+        project.logger.lifecycle("Downloading discord apk")
+
+        val url = URL("https://aliucord.com/download/discord?v=${discord.version}")
+        discord.apkFile.copyInputStreamToFile(url.openStream())
     }
 }
