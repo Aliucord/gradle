@@ -30,8 +30,8 @@ abstract class UninstallWithAdbTask : DefaultTask() {
     @TaskAction
     fun uninstallWithAdb() {
         val extension = project.extensions.getAliucord()
-        val android = project.extensions.getByName("android") as BaseExtension
 
+        val android = project.extensions.getByName("android") as BaseExtension
         AdbServerLauncher(Subprocess(), android.adbExecutable.absolutePath).launch()
         val jadbConnection = JadbConnection()
         val devices = jadbConnection.devices
@@ -55,8 +55,10 @@ abstract class UninstallWithAdbTask : DefaultTask() {
         device.execute("rm", path + file.name)
 
         if (extension.projectType.get() != ProjectType.INJECTOR) {
-            val args =
-                arrayListOf("start", "-S", "-n", "com.aliucord/com.discord.app.AppActivity\$Main")
+            val args = arrayListOf(
+                "start", "-S", "-n",
+                "com.aliucord/com.discord.app.AppActivity\$Main"
+            )
 
             val response = String(
                 device.executeShell("am", *args.toTypedArray()).readAllBytes(),
