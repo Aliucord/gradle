@@ -165,5 +165,10 @@ fun registerTasks(project: Project) {
             it.group = TASK_GROUP
             it.dependsOn("make")
         }
+
+        project.tasks.register("uninstallWithAdb", UninstallWithAdbTask::class.java) {
+            it.group = TASK_GROUP
+            it.dependsOn("make")
+        }
     }
 }
