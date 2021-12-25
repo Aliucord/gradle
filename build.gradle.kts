@@ -40,3 +40,22 @@ gradlePlugin {
         }
     }
 }
+
+publishing {
+    repositories {
+        val username = System.getenv("MAVEN_USERNAME")
+        val password = System.getenv("MAVEN_PASSWORD")
+
+        if (username != null && password != null) {
+            maven {
+                credentials {
+                    this.username = username
+                    this.password = password
+                }
+                setUrl("https://maven.aliucord.com/snapshots")
+            }
+        } else {
+            mavenLocal()
+        }
+    }
+}
