@@ -23,10 +23,7 @@ import org.gradle.api.tasks.AbstractCopyTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
-import se.vidstige.jadb.AdbServerLauncher
-import se.vidstige.jadb.JadbConnection
-import se.vidstige.jadb.RemoteFile
-import se.vidstige.jadb.Subprocess
+import se.vidstige.jadb.*
 import java.nio.charset.StandardCharsets
 
 abstract class DeployWithAdbTask : DefaultTask() {
@@ -41,7 +38,13 @@ abstract class DeployWithAdbTask : DefaultTask() {
 
         AdbServerLauncher(Subprocess(), android.adbExecutable.absolutePath).launch()
         val jadbConnection = JadbConnection()
-        val devices = jadbConnection.devices
+        val devices = jadbConnection.devices.filter {
+            try {
+                it.state == JadbDevice.State.Device
+            } catch (e: JadbException) {
+                false
+            }
+        }
 
         require(devices.size == 1) {
             "Only one ADB device should be connected, but ${devices.size} were!"
