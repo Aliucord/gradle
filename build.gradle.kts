@@ -5,7 +5,6 @@ plugins {
 }
 
 group = "com.aliucord"
-version = "0.1-SNAPSHOT"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_11
