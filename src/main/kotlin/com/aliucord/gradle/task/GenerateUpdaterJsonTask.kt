@@ -21,8 +21,10 @@ import groovy.json.JsonBuilder
 import groovy.json.JsonGenerator
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.AbstractCopyTask
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.apache.commons.codec.digest.DigestUtils
 
 abstract class GenerateUpdaterJsonTask : DefaultTask() {
     @get:OutputFile
@@ -39,12 +41,15 @@ abstract class GenerateUpdaterJsonTask : DefaultTask() {
                 continue
             }
 
+            val task = aliucord.project.tasks.getByName("make") as AbstractCopyTask
+
             map[subproject.name] = UpdateInfo(
                 aliucord.minimumDiscordVersion.orNull ?: aliucord.discord?.version,
                 subproject.version.toString(),
                 aliucord.buildUrl.orNull,
                 aliucord.changelog.orNull,
-                aliucord.changelogMedia.orNull
+                aliucord.changelogMedia.orNull,
+                DigestUtils.sha1Hex(task.outputs.files.singleFile.readBytes())
             )
         }
 
