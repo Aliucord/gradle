@@ -16,7 +16,8 @@
 package com.aliucord.gradle.configuration
 
 import com.aliucord.gradle.DiscordInfo
-import com.aliucord.gradle.copyInputStreamToFile
+import com.aliucord.gradle.createProgressLogger
+import com.aliucord.gradle.download
 import com.aliucord.gradle.getAliucord
 import com.googlecode.d2j.dex.Dex2jar
 import com.googlecode.d2j.reader.BaseDexFileReader
@@ -61,7 +62,8 @@ class DiscordConfigurationProvider : IConfigurationProvider {
             project.logger.lifecycle("Downloading discord apk")
 
             val url = URL("https://aliucord.com/download/discord?v=${discord.version}")
-            discord.apkFile.copyInputStreamToFile(url.openStream())
+
+            url.download(discord.apkFile, createProgressLogger(project, "Download discord apk"))
         }
 
         if (!discord.jarFile.exists()) {
