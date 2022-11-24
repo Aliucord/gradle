@@ -64,6 +64,7 @@ abstract class CompileResourcesTask : Exec() {
             args("-R", tmpRes.path)
             args("--manifest", manifestFile.asFile.get().path)
             args("-o", outputFile.asFile.get().path)
+            args("--auto-add-overlay")
             execute()
         }
 
