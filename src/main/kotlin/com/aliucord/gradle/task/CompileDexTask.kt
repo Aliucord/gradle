@@ -58,7 +58,7 @@ abstract class CompileDexTask : DefaultTask() {
         Closer.create().use { closer ->
             val dexBuilder = DexArchiveBuilder.createD8DexBuilder(
                 DexParameters(
-                    minSdkVersion = android.defaultConfig.maxSdkVersion ?: 24,
+                    minSdkVersion = android.defaultConfig.minSdkVersion?.apiLevel ?: 24,
                     debuggable = true,
                     dexPerClass = false,
                     withDesugaring = true,
