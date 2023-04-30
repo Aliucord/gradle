@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.5.21"
+    kotlin("jvm") version "1.7.20"
     id("java-gradle-plugin")
     id("maven-publish")
 }
@@ -15,6 +15,7 @@ repositories {
     mavenCentral()
     google()
     maven("https://jitpack.io")
+    maven("https://maven.aliucord.com/snapshots")
 }
 
 dependencies {
@@ -22,13 +23,13 @@ dependencies {
     compileOnly(gradleApi())
 
     compileOnly("com.google.guava:guava:30.1.1-jre")
-    compileOnly("com.android.tools:sdk-common:30.0.0")
-    compileOnly("com.android.tools.build:gradle:7.0.0")
+    compileOnly("com.android.tools:sdk-common:31.0.0")
+    compileOnly("com.android.tools.build:gradle:7.0.4")
 
     implementation("com.github.Aliucord.dex2jar:dex-translator:d5a5efb06c")
-    implementation("com.github.Aliucord.jadx:jadx-core:1a213e978d")
-    implementation("com.github.Aliucord.jadx:jadx-dex-input:1a213e978d")
-    implementation("com.github.js6pak:jadb:fix-modified-time-SNAPSHOT")
+    implementation("com.aliucord.jadx:jadx-core:1.4.5-SNAPSHOT")
+    implementation("com.aliucord.jadx:jadx-dex-input:1.4.5-SNAPSHOT")
+    implementation("com.aliucord:jadb:1.2.1-SNAPSHOT")
 }
 
 gradlePlugin {
