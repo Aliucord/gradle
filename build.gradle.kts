@@ -26,7 +26,7 @@ dependencies {
     compileOnly("com.android.tools:sdk-common:31.0.0")
     compileOnly("com.android.tools.build:gradle:7.0.4")
 
-    implementation("com.github.Aliucord.dex2jar:dex-translator:d5a5efb06c")
+    implementation("com.github.Aliucord.dex2jar:dex-translator:808b91d679")
     implementation("com.aliucord.jadx:jadx-core:1.4.5-SNAPSHOT")
     implementation("com.aliucord.jadx:jadx-dex-input:1.4.5-SNAPSHOT")
     implementation("com.aliucord:jadb:1.2.1-SNAPSHOT")
