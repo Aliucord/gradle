@@ -29,12 +29,28 @@ abstract class AliucordExtension @Inject constructor(val project: Project) {
 
     val authors: ListProperty<Author> = project.objects.listProperty(Author::class.java)
 
-    fun author(name: String, id: Long) {
-        authors.add(Author(name, id))
-    }
+    /**
+     * Specify an author of this plugin.
+     *
+     * @param name      The user-facing name to display
+     * @param id        The Discord ID of the author, optional.
+     *                  This also will allow Aliucord to show a badge on your profile if the plugin is installed.
+     * @param hyperlink Whether to hyperlink the Discord profile specified by [id].
+     *                  Set this to false if you don't want to be spammed for support.
+     */
+    fun author(name: String, id: Long = 0L, hyperlink: Boolean = true) =
+        authors.add(Author(name, id, hyperlink))
 
     val links: Links = Links()
 
+    /**
+     * Set the source repository of this plugin.
+     * If you are not posting the source on Github, then [updateUrl] and [buildUrl] will need
+     * to be set manually to a compatible Github repository of builds.
+     * Otherwise, if [updateUrl] and [buildUrl] have not set yet, then they will be generated based on the supplied url.
+     *
+     * @param url A repository url like `https://github.com/Aliucord/plugins-template`
+     */
     fun github(url: String) {
         links.github = url
 
