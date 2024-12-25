@@ -24,7 +24,6 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import se.vidstige.jadb.*
-import java.nio.charset.StandardCharsets
 
 abstract class DeployWithAdbTask : DefaultTask() {
     @get:Input
@@ -60,28 +59,27 @@ abstract class DeployWithAdbTask : DefaultTask() {
             file = file.resolve("Injector.dex")
         }
 
-        var path = "/storage/emulated/0/Aliucord/"
+        val remotePath = when (extension.projectType.get()) {
+            ProjectType.PLUGIN -> "/storage/emulated/0/Aliucord/plugins/${file.name}"
+            ProjectType.CORE -> "/storage/emulated/0/Aliucord/Aliucord.zip"
+            ProjectType.INJECTOR -> "/storage/emulated/0/Android/data/com.aliucord.manager/cache/injector/${project.version}.custom.dex"
+        }
+        device.push(file, RemoteFile(remotePath))
 
-        if (extension.projectType.get() == ProjectType.PLUGIN) {
-            path += "plugins/"
+        val activityName = when (extension.projectType.get()) {
+            ProjectType.PLUGIN, ProjectType.CORE -> "com.aliucord/com.discord.app.AppActivity\$Main"
+            ProjectType.INJECTOR -> "com.aliucord.manager/com.aliucord.manager.MainActivity"
         }
 
-        device.push(file, RemoteFile(path + file.name))
+        val args = arrayListOf("start", "-S", "-n", activityName)
+        if (waitForDebugger) args += "-D"
 
-        if (extension.projectType.get() != ProjectType.INJECTOR) {
-            val args = arrayListOf("start", "-S", "-n", "com.aliucord/com.discord.app.AppActivity\$Main")
+        val response = device.executeShell("am", *args.toTypedArray())
+            .readAllBytes()
+            .decodeToString()
 
-            if (waitForDebugger) {
-                args.add("-D")
-            }
-
-            val response = String(
-                device.executeShell("am", *args.toTypedArray()).readAllBytes(), StandardCharsets.UTF_8
-            )
-
-            if (response.contains("Error")) {
-                logger.error(response)
-            }
+        if (response.contains("Error")) {
+            logger.error(response)
         }
 
         logger.lifecycle("Deployed $file to ${device.serial}")
