@@ -1,0 +1,14 @@
+[versions]
+agp = "8.8.0"
+sdk = "31.0.0"
+dex2jar = "808b91d679"
+jadx = "1.4.5-SNAPSHOT"
+jadb = "1.2.1-SNAPSHOT"
+
+[libraries]
+android-gradle = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+android-sdk = { module = "com.android.tools:sdk-common", version.ref = "sdk" }
+dex2jar = { module = "com.github.Aliucord.dex2jar:dex-translator", version.ref = "dex2jar" }
+jadx-core = { module = "com.aliucord.jadx:jadx-core", version.ref = "jadx" }
+jadx-dexInput = { module = "com.aliucord.jadx:jadx-dex-input", version.ref = "jadx" }
+jadb = { module = "com.aliucord:jadb", version.ref = "jadb" }

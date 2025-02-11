@@ -23,7 +23,6 @@ import com.android.builder.dexing.ClassFileInputs
 import com.android.builder.dexing.DexArchiveBuilder
 import com.android.builder.dexing.DexParameters
 import com.android.builder.dexing.r8.ClassFileProviderFactory
-import com.google.common.io.Closer
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
@@ -48,72 +47,74 @@ abstract class CompileDexTask : DefaultTask() {
     @get:OutputFile
     abstract val pluginClassFile: RegularFileProperty
 
-    @Suppress("UnstableApiUsage")
     @TaskAction
     fun compileDex() {
         val android = project.extensions.getByName("android") as BaseExtension
 
         val dexOutputDir = outputFile.get().asFile.parentFile
 
-        Closer.create().use { closer ->
-            val dexBuilder = DexArchiveBuilder.createD8DexBuilder(
-                DexParameters(
-                    minSdkVersion = android.defaultConfig.minSdkVersion?.apiLevel ?: 24,
-                    debuggable = true,
-                    dexPerClass = false,
-                    withDesugaring = true,
-                    desugarBootclasspath = ClassFileProviderFactory(android.bootClasspath.map(File::toPath))
-                        .also { closer.register(it) },
-                    desugarClasspath = ClassFileProviderFactory(listOf<Path>()).also { closer.register(it) },
-                    coreLibDesugarConfig = null,
-                    coreLibDesugarOutputKeepRuleFile = null,
-                    messageReceiver = MessageReceiverImpl(
-                        ErrorFormatMode.HUMAN_READABLE,
-                        LoggerFactory.getLogger(CompileDexTask::class.java)
-                    )
+        val bootClassPath = ClassFileProviderFactory(android.bootClasspath.map(File::toPath))
+        val classPath = ClassFileProviderFactory(listOf<Path>())
+        val dexBuilder = DexArchiveBuilder.createD8DexBuilder(
+            DexParameters(
+                minSdkVersion = android.defaultConfig.minSdkVersion?.apiLevel ?: 24,
+                debuggable = true,
+                dexPerClass = false,
+                withDesugaring = true,
+                desugarBootclasspath = bootClassPath,
+                desugarClasspath = classPath,
+                coreLibDesugarConfig = null,
+                enableApiModeling = true,
+                messageReceiver = MessageReceiverImpl(
+                    ErrorFormatMode.HUMAN_READABLE,
+                    LoggerFactory.getLogger(CompileDexTask::class.java)
                 )
             )
+        )
 
-            val fileStreams =
-                input.map { input -> ClassFileInputs.fromPath(input.toPath()).use { it.entries { _, _ -> true } } }
-                    .toTypedArray()
+        val fileStreams = input.map { input ->
+            ClassFileInputs.fromPath(input.toPath()).use { it.entries { _, _ -> true } }
+        }.toTypedArray()
 
-            Arrays.stream(fileStreams).flatMap { it }
-                .use { classesInput ->
-                    val files = classesInput.collect(Collectors.toList())
+        Arrays.stream(fileStreams).flatMap { it }
+            .use { classesInput ->
+                val files = classesInput.collect(Collectors.toList())
 
-                    dexBuilder.convert(
-                        files.stream(),
-                        dexOutputDir.toPath()
-                    )
+                dexBuilder.convert(
+                    files.stream(),
+                    dexOutputDir.toPath(),
+                    null
+                )
 
-                    for (file in files) {
-                        val reader = ClassReader(file.readAllBytes())
+                for (file in files) {
+                    val reader = ClassReader(file.readAllBytes())
 
-                        val classNode = ClassNode()
-                        reader.accept(classNode, 0)
+                    val classNode = ClassNode()
+                    reader.accept(classNode, 0)
 
-                        for (annotation in classNode.visibleAnnotations.orEmpty() + classNode.invisibleAnnotations.orEmpty()) {
-                            if (annotation.desc == "Lcom/aliucord/annotations/AliucordPlugin;") {
-                                val aliucord = project.extensions.getAliucord()
+                    for (annotation in classNode.visibleAnnotations.orEmpty() + classNode.invisibleAnnotations.orEmpty()) {
+                        if (annotation.desc == "Lcom/aliucord/annotations/AliucordPlugin;") {
+                            val aliucord = project.extensions.getAliucord()
 
-                                require(aliucord.pluginClassName == null) {
-                                    "Only 1 active plugin class per project is supported"
-                                }
-
-                                for (method in classNode.methods) {
-                                    if (method.name == "getManifest" && method.desc == "()Lcom/aliucord/entities/Plugin\$Manifest;") {
-                                        throw IllegalArgumentException("Plugin class cannot override getManifest, use manifest.json system!")
-                                    }
-                                }
-
-                                aliucord.pluginClassName = classNode.name.replace('/', '.')
-                                    .also { pluginClassFile.asFile.orNull?.writeText(it) }
+                            require(aliucord.pluginClassName == null) {
+                                "Only 1 active plugin class per project is supported"
                             }
+
+                            for (method in classNode.methods) {
+                                if (method.name == "getManifest" && method.desc == "()Lcom/aliucord/entities/Plugin\$Manifest;") {
+                                    throw IllegalArgumentException("Plugin class cannot override getManifest, use manifest.json system!")
+                                }
+                            }
+
+                            aliucord.pluginClassName = classNode.name.replace('/', '.')
+                                .also { pluginClassFile.asFile.orNull?.writeText(it) }
                         }
                     }
                 }
-        }
+            }
+
+        bootClassPath.close()
+        classPath.close()
 
         logger.lifecycle("Compiled dex to ${outputFile.get()}")
     }

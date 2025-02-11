@@ -22,7 +22,7 @@ fun registerConfigurations(project: Project) {
 
     for (provider in providers) {
         project.configurations.register(provider.name) {
-            it.isTransitive = false
+            isTransitive = false
         }
     }
 

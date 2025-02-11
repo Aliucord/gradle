@@ -31,59 +31,59 @@ const val TASK_GROUP = "aliucord"
 
 fun registerTasks(project: Project) {
     val extension = project.extensions.getAliucord()
-    val intermediates = project.buildDir.resolve("intermediates")
+    val intermediates = project.layout.buildDirectory.dir("intermediates").get()
 
     if (project.rootProject.tasks.findByName("generateUpdaterJson") == null) {
         project.rootProject.tasks.register("generateUpdaterJson", GenerateUpdaterJsonTask::class.java) {
-            it.group = TASK_GROUP
+            group = TASK_GROUP
 
-            it.outputs.upToDateWhen { false }
+            outputs.upToDateWhen { false }
 
-            it.outputFile.set(it.project.buildDir.resolve("updater.json"))
+            outputFile.set(project.layout.buildDirectory.file("updater.json"))
         }
     }
 
     project.tasks.register("genSources", GenSourcesTask::class.java) {
-        it.group = TASK_GROUP
+        group = TASK_GROUP
     }
 
-    val pluginClassFile = intermediates.resolve("pluginClass")
+    val pluginClassFile = intermediates.file("pluginClass").asFile
 
     val compileDex = project.tasks.register("compileDex", CompileDexTask::class.java) {
-        it.group = TASK_GROUP
+        group = TASK_GROUP
 
-        it.pluginClassFile.set(pluginClassFile)
+        this.pluginClassFile.set(pluginClassFile)
 
         for (name in arrayOf("compileDebugJavaWithJavac", "compileDebugKotlin")) {
-            val task = project.tasks.findByName(name) as AbstractCompile?
+            val task = project.tasks.findByName(name)
             if (task != null) {
-                it.dependsOn(task)
-                it.input.from(task.destinationDirectory)
+                dependsOn(task)
+                input.from(task.outputs)
             }
         }
 
-        it.outputFile.set(intermediates.resolve("classes.dex"))
+        outputFile.set(intermediates.file("classes.dex"))
     }
 
     val compileResources = project.tasks.register("compileResources", CompileResourcesTask::class.java) {
-        it.group = TASK_GROUP
+        group = TASK_GROUP
 
         val processManifestTask = project.tasks.getByName("processDebugManifest") as ProcessLibraryManifest
-        it.dependsOn(processManifestTask)
+        dependsOn(processManifestTask)
 
         val android = project.extensions.getByName("android") as BaseExtension
-        it.input.set(android.sourceSets.getByName("main").res.srcDirs.single())
-        it.manifestFile.set(processManifestTask.manifestOutputFile)
+        input.set(android.sourceSets.getByName("main").res.srcDirs.single())
+        manifestFile.set(processManifestTask.manifestOutputFile)
 
-        it.outputFile.set(intermediates.resolve("res.apk"))
+        outputFile.set(intermediates.file("res.apk"))
 
-        it.doLast { _ ->
-            val resApkFile = it.outputFile.asFile.get()
+        doLast {
+            val resApkFile = outputFile.asFile.get()
 
             if (resApkFile.exists()) {
                 project.tasks.named("make", AbstractCopyTask::class.java) {
-                    it.from(project.zipTree(resApkFile)) { copySpec ->
-                        copySpec.exclude("AndroidManifest.xml")
+                    from(project.zipTree(resApkFile)) {
+                        exclude("AndroidManifest.xml")
                     }
                 }
             }
@@ -94,17 +94,16 @@ fun registerTasks(project: Project) {
         project.tasks.register(
             "make",
             if (extension.projectType.get() == ProjectType.INJECTOR) Copy::class.java else Zip::class.java
-        )
-        {
-            it.group = TASK_GROUP
+        ) {
+            group = TASK_GROUP
             val compileDexTask = compileDex.get()
-            it.dependsOn(compileDexTask)
+            dependsOn(compileDexTask)
 
             if (extension.projectType.get() == ProjectType.PLUGIN) {
-                val manifestFile = intermediates.resolve("manifest.json")
+                val manifestFile = intermediates.file("manifest.json").asFile
 
-                it.from(manifestFile)
-                it.doFirst {
+                from(manifestFile)
+                doFirst {
                     require(project.version != "unspecified") {
                         "No version is set"
                     }
@@ -137,33 +136,32 @@ fun registerTasks(project: Project) {
                 }
             }
 
-            it.from(compileDexTask.outputFile)
+            from(compileDexTask.outputFile)
 
             if (extension.projectType.get() == ProjectType.INJECTOR) {
-                it.into(project.buildDir)
-                it.rename { return@rename "Injector.dex" }
+                into(project.layout.buildDirectory)
+                rename { return@rename "Injector.dex" }
 
-                it.doLast { task ->
-                    task.logger.lifecycle("Copied Injector.dex to ${project.buildDir}")
+                doLast {
+                    logger.lifecycle("Copied Injector.dex to ${project.layout.buildDirectory}")
                 }
             } else {
-                val zip = it as Zip
-
+                val zip = this as Zip
                 zip.dependsOn(compileResources.get())
                 zip.isPreserveFileTimestamps = false
                 zip.archiveBaseName.set(project.name)
                 zip.archiveVersion.set("")
-                zip.destinationDirectory.set(project.buildDir)
+                zip.destinationDirectory.set(project.layout.buildDirectory)
 
-                it.doLast { task ->
-                    task.logger.lifecycle("Made Aliucord package at ${task.outputs.files.singleFile}")
+                doLast {
+                    logger.lifecycle("Made Aliucord package at ${outputs.files.singleFile}")
                 }
             }
         }
 
         project.tasks.register("deployWithAdb", DeployWithAdbTask::class.java) {
-            it.group = TASK_GROUP
-            it.dependsOn("make")
+            group = TASK_GROUP
+            dependsOn("make")
         }
     }
 }
