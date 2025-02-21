@@ -27,6 +27,8 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.*
+import org.gradle.kotlin.dsl.get
+import org.gradle.kotlin.dsl.getByName
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.tree.ClassNode
 import org.slf4j.LoggerFactory
@@ -49,7 +51,7 @@ abstract class CompileDexTask : DefaultTask() {
 
     @TaskAction
     fun compileDex() {
-        val android = project.extensions.getByName("android") as BaseExtension
+        val android = project.extensions.getByName<BaseExtension>("android")
 
         val dexOutputDir = outputFile.get().asFile.parentFile
 
@@ -72,46 +74,53 @@ abstract class CompileDexTask : DefaultTask() {
             )
         )
 
-        val fileStreams = input.map { input ->
-            ClassFileInputs.fromPath(input.toPath()).use { it.entries { _, _ -> true } }
-        }.toTypedArray()
+        try {
+            val fileStreams = input.map { input ->
+                ClassFileInputs.fromPath(input.toPath()).use { it.entries { _, _ -> true } }
+            }.toTypedArray()
 
-        Arrays.stream(fileStreams).flatMap { it }
-            .use { classesInput ->
-                val files = classesInput.collect(Collectors.toList())
+            Arrays.stream(fileStreams).flatMap { it }
+                .use { classesInput ->
+                    val files = classesInput.collect(Collectors.toList())
 
-                dexBuilder.convert(
-                    files.stream(),
-                    dexOutputDir.toPath(),
-                    null
-                )
+                    dexBuilder.convert(
+                        files.stream(),
+                        dexOutputDir.toPath(),
+                        null
+                    )
 
-                for (file in files) {
-                    val reader = ClassReader(file.readAllBytes())
+                    for (file in files) {
+                        val reader = ClassReader(file.readAllBytes())
+                        val classNode = ClassNode()
 
-                    val classNode = ClassNode()
-                    reader.accept(classNode, 0)
+                        reader.accept(classNode, 0)
 
-                    for (annotation in classNode.visibleAnnotations.orEmpty() + classNode.invisibleAnnotations.orEmpty()) {
-                        if (annotation.desc == "Lcom/aliucord/annotations/AliucordPlugin;") {
-                            val aliucord = project.extensions.getAliucord()
+                        for (annotation in classNode.visibleAnnotations.orEmpty() + classNode.invisibleAnnotations.orEmpty()) {
+                            if (annotation.desc == "Lcom/aliucord/annotations/AliucordPlugin;") {
+                                val aliucord = project.extensions.getAliucord()
 
-                            require(aliucord.pluginClassName == null) {
-                                "Only 1 active plugin class per project is supported"
-                            }
-
-                            for (method in classNode.methods) {
-                                if (method.name == "getManifest" && method.desc == "()Lcom/aliucord/entities/Plugin\$Manifest;") {
-                                    throw IllegalArgumentException("Plugin class cannot override getManifest, use manifest.json system!")
+                                require(aliucord.pluginClassName == null) {
+                                    "Only 1 active plugin class per project is supported"
                                 }
-                            }
 
-                            aliucord.pluginClassName = classNode.name.replace('/', '.')
-                                .also { pluginClassFile.asFile.orNull?.writeText(it) }
+                                for (method in classNode.methods) {
+                                    if (method.name == "getManifest" && method.desc == "()Lcom/aliucord/entities/Plugin\$Manifest;") {
+                                        throw IllegalArgumentException("Plugin class cannot override getManifest, use manifest.json system!")
+                                    }
+                                }
+
+                                aliucord.pluginClassName = classNode.name.replace('/', '.')
+                                    .also { pluginClassFile.asFile.orNull?.writeText(it) }
+                            }
                         }
                     }
                 }
-            }
+        } catch (e: Exception) {
+            logger.error("Failed to compile dex", e)
+        } finally {
+            bootClassPath.close()
+            classPath.close()
+        }
 
         bootClassPath.close()
         classPath.close()
