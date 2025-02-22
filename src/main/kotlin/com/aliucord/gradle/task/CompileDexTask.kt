@@ -27,14 +27,13 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.*
-import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.getByName
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.tree.ClassNode
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
-import java.util.*
+import java.util.Arrays
 import java.util.stream.Collectors
 
 abstract class CompileDexTask : DefaultTask() {
@@ -121,9 +120,6 @@ abstract class CompileDexTask : DefaultTask() {
             bootClassPath.close()
             classPath.close()
         }
-
-        bootClassPath.close()
-        classPath.close()
 
         logger.lifecycle("Compiled dex to ${outputFile.get()}")
     }
