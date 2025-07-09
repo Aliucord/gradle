@@ -96,8 +96,7 @@ fun registerTasks(project: Project) {
             if (extension.projectType.get() == ProjectType.INJECTOR) Copy::class.java else Zip::class.java
         ) {
             group = TASK_GROUP
-            val compileDexTask = compileDex.get()
-            dependsOn(compileDexTask)
+            dependsOn(compileDex)
 
             if (extension.projectType.get() == ProjectType.PLUGIN) {
                 val manifestFile = intermediates.file("manifest.json").asFile
@@ -136,7 +135,7 @@ fun registerTasks(project: Project) {
                 }
             }
 
-            from(compileDexTask.outputFile)
+            from(compileDex.map { it.outputFile })
 
             if (extension.projectType.get() == ProjectType.INJECTOR) {
                 into(project.layout.buildDirectory)
