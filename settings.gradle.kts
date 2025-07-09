@@ -1,3 +1,5 @@
+@file:Suppress("UnstableApiUsage")
+
 pluginManagement {
     repositories {
         google()
@@ -9,8 +11,10 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
         google()
-        maven("https://jitpack.io")
-        maven("https://maven.aliucord.com/snapshots")
+        maven {
+            name = "aliucord"
+            url = uri("https://maven.aliucord.com/snapshots")
+        }
     }
 }
 

@@ -21,7 +21,7 @@ dependencies {
 
 gradlePlugin {
     plugins {
-        create("aliucord-plugin") {
+        create("aliucord-gradle-plugin") {
             id = "com.aliucord.gradle"
             implementationClass = "com.aliucord.gradle.AliucordPlugin"
         }
